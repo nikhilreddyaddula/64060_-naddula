@@ -1,0 +1,18 @@
+#Dataset source :https://www.kaggle.com/datasets/vivek468/superstore-dataset-final?resource=download
+#Dataset import 
+nr <- read.csv('/Users/nikhilreddya/Downloads/nr.csv')
+#printing out the dataset
+summary(nr)
+#Transformation of variables
+#Histogram
+nr$Sales<-(nr$Sales-mean(nr$Sales)/var(nr$Sales))
+nr$Sales
+
+hist(nr$Profit)
+#Scatter Plot
+library(ggplot2)
+ggplot(nr)+
+  aes(x=Profit,y=Sales)+
+  geom_point(shape="circle",size=1.5,colour="#112446")+
+  theme_minimal()
+
