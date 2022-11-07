@@ -3,9 +3,9 @@ title: "k-Means for clustering"
 author: "Nikhil Reddy Addula"
 date: "2022-11-05"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ```{r}
