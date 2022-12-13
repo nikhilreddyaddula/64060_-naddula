@@ -1,0 +1,133 @@
+---
+title: "FINAL PROJECT"
+author: "Nikhil Reddy Addula"
+date: "2022-12-08"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+
+
+```{r}
+#loading library functions
+library(dplyr)
+library(caret)
+library(tidyverse)  
+library(gridExtra)
+library(factoextra) 
+library(ISLR)
+library(flexclust)
+library(cluster)
+library(corrplot)
+
+```
+
+
+
+```{r}
+set.seed(1789)
+#importing Data set and converting 
+getwd()
+NR<-read.csv("~/Downloads/fuel_receipts_costs_eia923 (1).csv")
+
+#Replace NA values with median 
+NR_1<-NR %>% replace(is.na(.), 0)
+NR_2 <- NR_1%>% mutate(across(where(is.numeric), ~replace_na(., median(., na.rm=TRUE))))       
+
+```
+
+```{r}
+#randomly sample about 2% of your data 
+Nr_model2<-NR_2%>%sample_frac(0.02)
+
+#normalizing data using scale 
+norm_model<-preProcess(NR_2,method = c("scale"))
+Nr_model2_normalized<-predict(norm_model,Nr_model2)
+
+#75% of the sampled data as the training set
+Index_t<-createDataPartition(Nr_model2$fuel_cost_per_mmbtu, p = 0.75,list = FALSE)
+train<- Nr_model2_normalized[Index_t,]
+test<-Nr_model2_normalized[-Index_t,]
+
+#selecting/using the required columns for clustering 
+nr<-train[,c(15:20)]
+```
+
+```{r}
+#correlation of columns selected
+corrplot(cor(nr))
+```
+
+```{r}
+#using kmeans clustering with both the methods "WSS" & "silhouette" and getting the clusters points 'k'
+set.seed(1789)
+ANR<-Auto[,c(1,6)]
+# Scaling the data frame (z-score) 
+ANR_1 <- scale(ANR)
+fviz_nbclust(ANR_1, kmeans, method = "wss")
+fviz_nbclust(ANR_1, kmeans, method = "silhouette")
+```
+
+```{r}
+#After checking the above graph we found k=4
+set.seed(1789)
+anr <- kmeans(nr, centers = 4, nstart = 50)
+shiloh_kmeans<- kmeans(nr,centers = 4,nstart = 50)
+anr$centers # output the centers
+anr$size # Number in each cluster
+anr$cluster["120"] # Identify the cluster of the 120th observation as an example
+fviz_cluster(anr, data = nr) # Visualize the output
+fviz_cluster(shiloh_kmeans,data = nr)
+```
+```{r}
+#finding the mean of clusters k=4
+train$cluster<-anr$cluster
+train%>%group_by(cluster)%>%summarise(avg_mmbtu=mean(fuel_mmbtu_per_unit),avg_fuel_recived =mean(fuel_received_units),avg_sulphur_content = mean(sulfur_content_pct),avg_ash_content = mean(ash_content_pct),avg_cost_perunit = mean(fuel_cost_per_mmbtu))
+```
+
+
+# Other Distances
+```{r}
+
+set.seed(1789)
+#kmeans clustering, using manhattan distance
+k4 = kcca(nr, k=4, kccaFamily("kmedians"))
+k4
+```
+
+
+```{r}
+# predict() function
+clusters_index <- predict(k4)
+dist(k4@centers)
+```
+
+
+
+
+As for the Sulphur ,ash & mercury content are less than 0.002 m they can be neglected 
+# Cluster  1
+
+#  This cluster recieves fuel of 0.18177742 .
+#  As they are receiving low fuel,sulphur & ash their heat content in fuel(fuel_mmbtu) is also low (0.4458332).
+#  The fuel cost per mmbtu is higher(0.0048009553) than all the 4 clusters formed.
+#  Due to the high cost of fuel per mmbtu, this Cluster is not a favoured one to suggest to the US government.
+
+# Cluster 2
+ 
+#   This cluster receives fuel of 3.95554628 which is high than all the clusters.
+#   Their heat content in the fuel is very very low of 0.1033619 comapared to all the 4 clsuters.
+#   The fuel cost per mmbtu is lower(0.0014246208) than all the 4 clusters formed.
+#   This cluster is also not a preferred one to recommend for us Government because of fuel mmbtu per unit.
+ 
+# Cluster 3
+ 
+# 	This cluster receives fuel of 0.05023818 which is minimal.
+# 	Their heat content in the fuel is 2.3366447 which is good to the fuel recieves compared to other 3 clsuters.
+# 	The fuel cost per mmbtu is also very good(0.0017970585) to fuel recieved and the heat content.
+# 	This Cluster is the one that the US Government should be recommended since it takes all the variables, including (fuel recieved,heat content,fuel cost per mmbtu.
+
+
+
